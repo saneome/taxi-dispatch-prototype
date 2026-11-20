@@ -1,0 +1,46 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: taxi-service
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/taxidb}
+    username: ${SPRING_DATASOURCE_USERNAME:taxidev}
+    password: ${SPRING_DATASOURCE_PASSWORD:taxipass123}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:db/init.sql
+      continue-on-error: true
+
+mapbox:
+  access-token: ${MAPBOX_ACCESS_TOKEN:}
+  interval-ms: ${MAPBOX_INTERVAL_MS:250}
+  daily-request-limit: ${MAPBOX_DAILY_REQUEST_LIMIT:2500}
+  timeout-ms: 10000
+
+# Yandex Maps and Geocoder Configuration
+yandex:
+  maps:
+    api-key: ${YANDEX_MAPS_API_KEY:}
+  geocoder:
+    api-key: ${YANDEX_GEOCODER_API_KEY:}
+
+# Platform commission rate (18% under Federal Law No. 580-FZ)
+taxi:
+  platform-commission-rate: 0.18
+  search-radius-km: 5.0
+
+logging:
+  level:
+    org.springframework.web.client.RestTemplate: "OFF"

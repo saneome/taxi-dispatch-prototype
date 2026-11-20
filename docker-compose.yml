@@ -1,0 +1,57 @@
+services:
+  # 1. Реляционная СУБД PostgreSQL 16 (схема 3NF: перевозчики, водители, автомобили, заказы, биллинг)
+  postgres:
+    image: postgres:16-alpine
+    container_name: taxi_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: taxidb
+      POSTGRES_USER: taxidev
+      POSTGRES_PASSWORD: taxipass123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./src/java/src/main/resources/db/init.sql:/docker-entrypoint-initdb.d/01_init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taxidev -d taxidb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - taxi_net
+
+  # 3. Сервер приложений Spring Boot 3 (Java 17) + Интерактивная веб-витрина диспетчера
+  backend:
+    build:
+      context: ./src/java
+      dockerfile: Dockerfile
+    container_name: taxi_backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/taxidb
+      SPRING_DATASOURCE_USERNAME: taxidev
+      SPRING_DATASOURCE_PASSWORD: taxipass123
+      MAPBOX_ACCESS_TOKEN: ${MAPBOX_ACCESS_TOKEN:-}
+      MAPBOX_INTERVAL_MS: ${MAPBOX_INTERVAL_MS:-250}
+      MAPBOX_DAILY_REQUEST_LIMIT: ${MAPBOX_DAILY_REQUEST_LIMIT:-2500}
+      YANDEX_MAPS_API_KEY: ${YANDEX_MAPS_API_KEY:-}
+      YANDEX_GEOCODER_API_KEY: ${YANDEX_GEOCODER_API_KEY:-}
+      TAXI_PLATFORM_COMMISSION_RATE: "0.18"
+      TAXI_SEARCH_RADIUS_KM: "10.0"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - taxi_net
+
+networks:
+  taxi_net:
+    driver: bridge
+
+volumes:
+  postgres_data:
